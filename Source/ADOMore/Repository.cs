@@ -90,7 +90,7 @@
                         {
                             if (propertyType.IsEnum)
                             {
-                                property.SetValue(model, Enum.ToObject(propertyType, fieldValue));
+                                property.SetValue(model, Enum.ToObject(propertyType, fieldValue), null);
                             }
                             else
                             {
@@ -174,7 +174,7 @@
                 {
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = string.Concat("@", property.Name);
-                    parameter.Value = property.GetValue(model);
+                    parameter.Value = property.GetValue(model, null);
                     
                     if (parameter.Value == null)
                     {
