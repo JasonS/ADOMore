@@ -57,6 +57,22 @@
             /// <summary>
             /// Converts the provided record to an instance of <typeparamref name="T"/>
             /// </summary>
+            /// <param name="dataReader">An <see cref="IDataReader"/></param>
+            /// <param name="readFirst">If true then the reader will be read first</param>
+            /// <returns>An instance of <typeparamref name="T"/></returns>
+            public T ToModel(IDataReader datareader, bool readFirst)
+            {
+                if (readFirst)
+                {
+                    datareader.Read();
+                }
+
+                return this.ToModel((IDataRecord)datareader);
+            }
+
+            /// <summary>
+            /// Converts the provided record to an instance of <typeparamref name="T"/>
+            /// </summary>
             /// <param name="dataRecord">An <see cref="IDataRecord"/></param>
             /// <returns>An instance of <typeparamref name="T"/></returns>
             public T ToModel(IDataRecord dataRecord)
