@@ -49,7 +49,7 @@
         /// Creates a sql command from parameterized sql text and a model of type T
         /// </summary>
         /// <typeparam name="T">The type of the model</typeparam>
-        /// <param name="connection">A connection</param>
+        /// <param name="connection">This db connection</param>
         /// <param name="sql">A sql string</param>
         /// <param name="model">The model to inject values from</param>
         /// <param name="transaction">An optional transaction</param>
@@ -58,6 +58,62 @@
         {
             Reflector<T> reflector = new Reflector<T>();
             return reflector.CreateCommand(sql, model, connection, CommandType.Text, transaction);
+        }
+
+        /// <summary>
+        /// Creates a sql command from a collection of key value pairs
+        /// </summary>
+        /// <param name="connection">This db connection</param>
+        /// <param name="sql">A paraterized sql string</param>
+        /// <param name="keyValues">A collection of key value pairs</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns></returns>
+        public static IDbCommand CreateCommand(this IDbConnection connection, string sql, IDictionary<string, object> keyValues, IDbTransaction transaction)
+        {
+            IDbCommand command = null;
+
+            if (connection == null)
+            {
+                throw new ArgumentNullException("connection", "connection cannot be null");
+            }
+
+            if (string.IsNullOrEmpty(sql))
+            {
+                throw new ArgumentNullException("sql", "sql cannot be null or empty");
+            }
+
+            command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.CommandType = CommandType.Text;
+
+            if (transaction != null)
+            {
+                command.Transaction = transaction;
+            }
+
+            if (keyValues != null)
+            {
+                foreach (var key in keyValues.Keys)
+                {
+                    if (string.IsNullOrWhiteSpace(key))
+                    {
+                        throw new InvalidOperationException("all keys must have a non-empty value to be added to command parameters");
+                    }
+
+                    IDbDataParameter parameter = command.CreateParameter();
+                    parameter.ParameterName = key.StartsWith("@") ? key : string.Concat("@", key);
+                    parameter.Value = keyValues[key];
+
+                    if (parameter.Value == null)
+                    {
+                        parameter.Value = DBNull.Value;
+                    }
+
+                    command.Parameters.Add(parameter);
+                }
+            }
+
+            return command;
         }
     }
 }
