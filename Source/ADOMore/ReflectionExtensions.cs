@@ -6,14 +6,14 @@
     using System.Reflection;
     using System.Text;
 
-    public static class ReflectionExtensions
+    internal static class ReflectionExtensions
     {
-        public static bool IncludeInDbReflection(this Type propertyType)
+        internal static bool IncludeInDbReflection(this Type propertyType)
         {
             return (propertyType.IsPrimitive && typeof(IConvertible).IsAssignableFrom(propertyType)) || propertyType.IsValueType || propertyType == typeof(string);
         }
 
-        public static Type ResolveSettableType(this Type propertyType)
+        internal static Type ResolveSettableType(this Type propertyType)
         {
             if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
