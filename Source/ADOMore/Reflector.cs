@@ -40,8 +40,6 @@
                 throw new ArgumentNullException("dataReader", "dataReader cannot be null");
             }
 
-            List<T> coll = new List<T>();
-
             while (datareader.Read())
             {
                 yield return this.ToModel((IDataRecord)datareader);
