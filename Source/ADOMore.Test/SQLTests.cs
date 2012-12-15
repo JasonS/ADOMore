@@ -1,6 +1,7 @@
 ﻿namespace ADOMore.Test
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.Data;
     using System.Data.SqlClient;
@@ -47,6 +48,22 @@
                 connection.Open();
                 CreateRecord(instance, connection);
                 AssertGetTestInstanceFromDatabase(instance, connection);
+            }
+        }
+
+        [TestMethod]
+        public void TestDicitionaryExtenstion()
+        {
+            EnsureConnectionString();
+            
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (IDbCommand command = connection.CreateCommand(new Dictionary<string, object> { { "@Id", Guid.NewGuid() } }, "SELECT * FROM [Test] WHERE [Id] = @Id", null))
+                {
+                    
+                }
             }
         }
 

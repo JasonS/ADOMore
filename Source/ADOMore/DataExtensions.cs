@@ -64,11 +64,11 @@
         /// Creates a sql command from a collection of key value pairs
         /// </summary>
         /// <param name="connection">This db connection</param>
-        /// <param name="sql">A paraterized sql string</param>
         /// <param name="keyValues">A collection of key value pairs</param>
+        /// <param name="sql">A paraterized sql string</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns></returns>
-        public static IDbCommand CreateCommand(this IDbConnection connection, string sql, IDictionary<string, object> keyValues, IDbTransaction transaction)
+        public static IDbCommand CreateCommand(this IDbConnection connection, IDictionary<string, object> keyValues, string sql, IDbTransaction transaction)
         {
             IDbCommand command = null;
 
