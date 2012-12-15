@@ -95,7 +95,7 @@
         {
             Stream stream = null;
             IDbCommand command = null;
-            Repository<TestClass> repo = new Repository<TestClass>();
+            Reflector<TestClass> repo = new Reflector<TestClass>();
             
             try
             {
@@ -272,7 +272,7 @@ END";
 
             try
             {
-                Repository<TestClass> repo = new Repository<TestClass>();
+                Reflector<TestClass> repo = new Reflector<TestClass>();
                 command = repo.CreateCommand(Sql, instance, connection);
                 reader = command.ExecuteReader();
                 reader.Read();
