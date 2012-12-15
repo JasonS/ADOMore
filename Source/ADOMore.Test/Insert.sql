@@ -1,0 +1,48 @@
+﻿INSERT INTO [Test]
+(
+    [SetGuid],
+	[SetNullGuid],
+	[SetBool],
+    [SetNullBool],
+    [SetString],
+    [SetChar],
+    [SetNullChar],
+    [SetInt16],
+    [SetInt32],
+    [SetNullInt32],
+    [SetInt64],
+    [SetSingle],
+    [SetNullSingle],
+    [SetDouble],
+    [SetNullDouble],
+    [SetDecimal],
+    [SetNullDecimal],
+    [SetDateTime],
+    [SetNullDateTime],
+    [SetTestType],
+    [SetNullTestType]
+)
+VALUES
+(
+	@SetGuid,
+	@SetNullGuid,
+	@SetBool,
+    @SetNullBool,
+    @SetString,
+    @SetChar,
+    @SetNullChar,
+    @SetInt16,
+    @SetInt32,
+    @SetNullInt32,
+    @SetInt64,
+    @SetSingle,
+    @SetNullSingle,
+    @SetDouble,
+    @SetNullDouble,
+    @SetDecimal,
+    @SetNullDecimal,
+    @SetDateTime,
+    @SetNullDateTime,
+    @SetTestType,
+    @SetNullTestType
+)
