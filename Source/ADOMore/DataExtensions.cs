@@ -54,7 +54,7 @@
         /// <param name="model">The model to inject values from</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>The command</returns>
-        public static IDbCommand CreateCommand<T>(this IDbConnection connection, string sql, T model, IDbTransaction transaction)
+        public static IDbCommand CreateCommandFromModel<T>(this IDbConnection connection, string sql, T model, IDbTransaction transaction)
         {
             Reflector<T> reflector = new Reflector<T>();
             return reflector.CreateCommand(sql, model, connection, CommandType.Text, transaction);
