@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Globalization;
     using System.Linq;
     using System.Reflection;
     using System.Text;
@@ -84,9 +85,9 @@
 
             foreach (PropertyInfo property in settable)
             {
-                Type propertyType = property.PropertyType.ResolveSettableType();
+                Type propertyType = property.PropertyType.UnderlyingType();
 
-                if (propertyType.IncludeInDbReflection())
+                if (propertyType.IsDatabaseCompatible())
                 {
                     string upperName = property.Name.ToUpperInvariant();
 
@@ -176,19 +177,24 @@
 
             foreach (PropertyInfo property in this.TypeProperties)
             {
-                Type propertyType = property.PropertyType.ResolveSettableType();
+                Type propertyType = property.PropertyType.UnderlyingType();
 
-                if (propertyType.IncludeInDbReflection())
+                if (propertyType.IsDatabaseCompatible())
                 {
+                    object value = property.GetValue(model, null);
+                    
+                    if (value == null)
+                    {
+                        value = DBNull.Value;
+                    }
+                    else if (value.GetType() == typeof(char))
+                    {
+                        value = ((char)value).ToString(CultureInfo.InvariantCulture);
+                    }
+                    
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = string.Concat("@", property.Name);
-                    parameter.Value = property.GetValue(model, null);
-
-                    if (parameter.Value == null)
-                    {
-                        parameter.Value = DBNull.Value;
-                    }
-
+                    parameter.Value = value;
                     command.Parameters.Add(parameter);
                 }
             }

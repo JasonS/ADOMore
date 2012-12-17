@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Globalization;
     using System.Linq;
     using System.Text;
 
@@ -100,15 +101,20 @@
                         throw new InvalidOperationException("all keys must have a non-empty value to be added to command parameters");
                     }
 
-                    IDbDataParameter parameter = command.CreateParameter();
-                    parameter.ParameterName = key.StartsWith("@") ? key : string.Concat("@", key);
-                    parameter.Value = keyValues[key];
+                    object value = keyValues[key];
 
-                    if (parameter.Value == null)
+                    if (value == null)
                     {
-                        parameter.Value = DBNull.Value;
+                        value = DBNull.Value;
+                    }
+                    else if (value.GetType() == typeof(char))
+                    {
+                        value = ((char)value).ToString(CultureInfo.InvariantCulture);
                     }
 
+                    IDbDataParameter parameter = command.CreateParameter();
+                    parameter.ParameterName = key.StartsWith("@") ? key : string.Concat("@", key);
+                    parameter.Value = value;
                     command.Parameters.Add(parameter);
                 }
             }

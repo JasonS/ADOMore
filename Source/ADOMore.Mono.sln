@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Mono", "ADOMore\ADOMore.Mono.csproj", "{056E652B-2502-4195-9CCD-03DF118F597C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Test.Mono", "ADOMore.Test\ADOMore.Test.Mono.csproj", "{9A012007-135C-4984-9790-4EAC170BDF2C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{056E652B-2502-4195-9CCD-03DF118F597C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{056E652B-2502-4195-9CCD-03DF118F597C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{056E652B-2502-4195-9CCD-03DF118F597C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{056E652B-2502-4195-9CCD-03DF118F597C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A012007-135C-4984-9790-4EAC170BDF2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A012007-135C-4984-9790-4EAC170BDF2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A012007-135C-4984-9790-4EAC170BDF2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A012007-135C-4984-9790-4EAC170BDF2C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = ADOMore.Test\ADOMore.Test.Mono.csproj
+	EndGlobalSection
+EndGlobal
