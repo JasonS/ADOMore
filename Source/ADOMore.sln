@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore", "ADOMore\ADOMore.csproj", "{7947C57A-1554-4922-A1ED-82CB2E3EF84F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Test", "ADOMore.Test\ADOMore.Test.csproj", "{FEABDD82-CF87-46EF-9503-3091BBD11888}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Test", "ADOMore.Test\ADOMore.Test.csproj", "{B7FDF2D5-6955-433A-B353-DD24B49D84FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,10 @@ Global
 		{7947C57A-1554-4922-A1ED-82CB2E3EF84F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7947C57A-1554-4922-A1ED-82CB2E3EF84F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7947C57A-1554-4922-A1ED-82CB2E3EF84F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FEABDD82-CF87-46EF-9503-3091BBD11888}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FEABDD82-CF87-46EF-9503-3091BBD11888}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FEABDD82-CF87-46EF-9503-3091BBD11888}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FEABDD82-CF87-46EF-9503-3091BBD11888}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7FDF2D5-6955-433A-B353-DD24B49D84FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7FDF2D5-6955-433A-B353-DD24B49D84FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7FDF2D5-6955-433A-B353-DD24B49D84FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7FDF2D5-6955-433A-B353-DD24B49D84FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
