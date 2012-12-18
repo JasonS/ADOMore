@@ -113,6 +113,23 @@
         }
 
         [Test]
+        public void TestAnonymousTypes()
+        {
+            const string Sql =
+@"SELECT * 
+FROM [Test] 
+WHERE 
+    [SetGuid] = @Id";
+
+            using (IDbConnection connection = SqlTests.CreateConnection(this.connectionString))
+            {
+                connection.Open();
+                var command1 = connection.CreateCommand(Sql, new { Id = Guid.NewGuid() }, null);
+                var command2 = connection.CreateCommand(Sql, new { Id = Guid.NewGuid() }, null);
+            }
+        }
+
+        [Test]
         public void TableExists()
         {
             const string Sql =

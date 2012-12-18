@@ -14,7 +14,7 @@
     /// <typeparam name="T">The type of the model object</typeparam>
     internal sealed class Reflector
     {
-        private PropertyInfo[] typeProperties;
+        private Dictionary<PropertyInfo, Type> typeProperties;
         private Type myType;
         private readonly object typeLocker = new object();
 
@@ -22,24 +22,6 @@
         {
             this.myType = objectType;
             this.EnsureTypeProperties();
-        }
-
-        /// <summary>
-        /// Gets a collection of items of type <typeparamref name="T"/> from the provided datareader
-        /// </summary>
-        /// <param name="datareader">The datareader</param>
-        /// <returns>The collection</returns>
-        internal IEnumerable<T> ToCollection<T>(IDataReader datareader)
-        {
-            if (datareader == null)
-            {
-                throw new ArgumentNullException("dataReader", "dataReader cannot be null");
-            }
-
-            while (datareader.Read())
-            {
-                yield return this.ToObject<T>((IDataRecord)datareader);
-            }
         }
 
         /// <summary>
@@ -54,7 +36,7 @@
             Dictionary<string, int> fieldDictionary;
             IEnumerable<PropertyInfo> settable;
             model = Activator.CreateInstance<T>();
-            settable = this.typeProperties.Where(p => p.CanWrite).ToArray();
+            settable = this.typeProperties.Keys.Where(p => p.CanWrite).ToArray();
             fieldDictionary = new Dictionary<string, int>();
 
             for (int i = 0, c = dataRecord.FieldCount; i < c; i++)
@@ -64,7 +46,7 @@
 
             foreach (PropertyInfo property in settable)
             {
-                Type propertyType = property.PropertyType.UnderlyingType();
+                Type propertyType = this.typeProperties[property];
 
                 if (propertyType.IsDatabaseCompatible())
                 {
@@ -129,9 +111,9 @@
                 command.Transaction = transaction;
             }
 
-            foreach (PropertyInfo property in this.typeProperties)
+            foreach (PropertyInfo property in this.typeProperties.Keys)
             {
-                Type propertyType = property.PropertyType.UnderlyingType();
+                Type propertyType = this.typeProperties[property];
 
                 if (propertyType.IsDatabaseCompatible())
                 {
@@ -164,7 +146,14 @@
                 {
                     if (this.typeProperties == null)
                     {
-                        this.typeProperties = myType.GetProperties().ToArray();
+                        Dictionary<PropertyInfo, Type> info = new Dictionary<PropertyInfo, Type>();
+                        
+                        foreach (PropertyInfo prop in this.myType.GetProperties())
+                        {
+                            info.Add(prop, prop.PropertyType.UnderlyingType());
+                        }
+
+                        this.typeProperties = info;
                     }
                 }
             }
