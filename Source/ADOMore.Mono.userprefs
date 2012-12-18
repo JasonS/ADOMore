@@ -1,9 +1,14 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench ActiveDocument="ADOMore.Test/ReflectionExtensionsTests.cs">
+    <Files>
+      <File FileName="ADOMore.Test/ReflectionExtensionsTests.cs" Line="13" Column="9" />
+    </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True" selected="True" />
+        <State expanded="True" selected="True">
+          <Node name="ADOMore.Test.Mono" expanded="True" />
+        </State>
       </Pad>
       <Pad Id="ClassPad">
         <State expanded="True" selected="True" />

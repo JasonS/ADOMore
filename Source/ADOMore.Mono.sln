@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Mono", "ADOMore\ADO
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.Test.Mono", "ADOMore.Test\ADOMore.Test.Mono.csproj", "{9A012007-135C-4984-9790-4EAC170BDF2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADOMore.MonoTouch", "ADOMore\ADOMore.MonoTouch.csproj", "{B22F424A-B25D-4303-9031-8681E5D013B8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,10 +19,6 @@ Global
 		{9A012007-135C-4984-9790-4EAC170BDF2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A012007-135C-4984-9790-4EAC170BDF2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A012007-135C-4984-9790-4EAC170BDF2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B22F424A-B25D-4303-9031-8681E5D013B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B22F424A-B25D-4303-9031-8681E5D013B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B22F424A-B25D-4303-9031-8681E5D013B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B22F424A-B25D-4303-9031-8681E5D013B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = ADOMore.Test\ADOMore.Test.Mono.csproj
