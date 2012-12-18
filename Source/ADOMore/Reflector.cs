@@ -6,29 +6,23 @@
     using System.Globalization;
     using System.Linq;
     using System.Reflection;
-    using System.Text;
 
-    /// <summary>
-    /// Contains ADO helper methods for converting to and from model objects
-    /// </summary>
-    /// <typeparam name="T">The type of the model object</typeparam>
     internal sealed class Reflector
     {
-        private Dictionary<PropertyInfo, Type> typeProperties;
-        private Type myType;
-        private readonly object typeLocker = new object();
-
-        internal Reflector(Type objectType)
+        private Type type;
+        private IDictionary<PropertyInfo, Type> typeProperties;
+        
+        internal Reflector(Type type)
         {
-            this.myType = objectType;
-            this.EnsureTypeProperties();
+            if (type == null)
+            {
+                throw new ArgumentNullException("type", "type cannot be null.");
+            }
+
+            this.type = type;
+            this.typeProperties = GetProperties(type);
         }
 
-        /// <summary>
-        /// Converts the provided record to an instance of <typeparamref name="T"/>
-        /// </summary>
-        /// <param name="dataRecord">An <see cref="IDataRecord"/></param>
-        /// <returns>An instance of <typeparamref name="T"/></returns>
         public T ToObject<T>(IDataRecord dataRecord)
         {
             T model;
@@ -74,15 +68,6 @@
             return model;
         }
 
-        /// <summary>
-        /// Creates a data command from a text command, a POCO object and a data connection
-        /// </summary>
-        /// <param name="sql">The SQL command</param>
-        /// <param name="model">The POCO object</param>
-        /// <param name="connection">The data connection</param>
-        /// <param name="commandType">A command type</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>A data command</returns>
         internal IDbCommand CreateCommand(string sql, object model, IDbConnection connection, CommandType commandType, IDbTransaction transaction)
         {
             IDbCommand command = null;
@@ -138,25 +123,16 @@
             return command;
         }
 
-        private void EnsureTypeProperties()
+        private static IDictionary<PropertyInfo, Type> GetProperties(Type type)
         {
-            lock (this.typeLocker)
-            {
-                if (this.typeProperties == null)
-                {
-                    if (this.typeProperties == null)
-                    {
-                        Dictionary<PropertyInfo, Type> info = new Dictionary<PropertyInfo, Type>();
-                        
-                        foreach (PropertyInfo prop in this.myType.GetProperties())
-                        {
-                            info.Add(prop, prop.PropertyType.UnderlyingType());
-                        }
+            Dictionary<PropertyInfo, Type> dict = new Dictionary<PropertyInfo, Type>();
 
-                        this.typeProperties = info;
-                    }
-                }
+            foreach (PropertyInfo prop in type.GetProperties())
+            {
+                dict.Add(prop, prop.PropertyType.UnderlyingType());
             }
+
+            return dict;
         }
     }
 }
