@@ -26,6 +26,33 @@
         }
 
         [Test]
+        public void AnonymousTypes()
+        {
+            const string Sql =
+@"SELECT * 
+FROM [Test] 
+WHERE 
+    [SetGuid] = @Id";
+
+            using (IDbConnection connection = SqlTests.CreateConnection(this.connectionString))
+            {
+                Guid id = Guid.NewGuid();
+
+                using (IDbCommand command = connection.CreateCommand(Sql, new { Id = id }, null))
+                {
+                    Assert.AreEqual(1, command.Parameters.Count);
+                    
+                    IDbDataParameter parameter = command.Parameters[0] as IDbDataParameter;
+                    Assert.IsNotNull(parameter);
+                    Assert.AreEqual("@Id", parameter.ParameterName);
+                    Assert.AreEqual(id, parameter.Value);
+                }
+
+                //var command2 = connection.CreateCommand(Sql, new { Id = Guid.NewGuid() }, null);
+            }
+        }
+
+        [Test]
         public void CreateRecord()
         {
             TestClass instance = new TestClass()
@@ -109,23 +136,6 @@
                     command.CommandText = Schema;
                     command.ExecuteNonQuery();
                 }
-            }
-        }
-
-        [Test]
-        public void TestAnonymousTypes()
-        {
-            const string Sql =
-@"SELECT * 
-FROM [Test] 
-WHERE 
-    [SetGuid] = @Id";
-
-            using (IDbConnection connection = SqlTests.CreateConnection(this.connectionString))
-            {
-                connection.Open();
-                var command1 = connection.CreateCommand(Sql, new { Id = Guid.NewGuid() }, null);
-                var command2 = connection.CreateCommand(Sql, new { Id = Guid.NewGuid() }, null);
             }
         }
 
