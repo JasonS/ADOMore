@@ -2,8 +2,13 @@
 {
     using System;
     using System.Data;
+#if !MONO
     using System.Data.SQLite;
+#endif
     using System.Linq;
+#if MONO
+    using Mono.Data.Sqlite;
+#endif
     using NUnit.Framework;
 
     [TestFixture]

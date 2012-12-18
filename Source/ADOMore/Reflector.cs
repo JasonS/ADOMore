@@ -9,7 +9,6 @@
 
     internal sealed class Reflector
     {
-        private Type type;
         private IDictionary<PropertyInfo, Type> typeProperties;
         
         internal Reflector(Type type)
@@ -19,7 +18,6 @@
                 throw new ArgumentNullException("type", "type cannot be null.");
             }
 
-            this.type = type;
             this.typeProperties = GetProperties(type);
         }
 
