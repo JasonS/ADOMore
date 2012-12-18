@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Globalization;
     using System.Data;
     using System.IO;
@@ -22,22 +23,6 @@
         ~SqlTests()
         {
             this.Dispose(false);
-        }
-
-        [Test]
-        public void CreateCommandFromDictionary()
-        {
-            using (IDbConnection connection = SqlTests.CreateConnection(this.connectionString))
-            {
-                connection.Open();
-                
-                using (IDbCommand command = connection.CreateCommand(
-                    new Dictionary<string, object> { { "@Id", Guid.NewGuid() } }, 
-                    "SELECT * FROM [Test] WHERE [Id] = @Id", 
-                    null))
-                {
-                }
-            }
         }
 
         [Test]
@@ -71,7 +56,7 @@
             using (IDbConnection connection = SqlTests.CreateConnection(this.connectionString))
             {
                 connection.Open();
-                CreateRecord(instance, connection);
+                Assert.IsTrue(CreateRecord(instance, connection) == 1);
                 AssertGetTestInstanceFromDatabase(instance, connection);
             }
         }
@@ -177,7 +162,7 @@ WHERE
 #endif
         }
 
-        private static void CreateRecord(TestClass instance, IDbConnection connection)
+        private static int CreateRecord(TestClass instance, IDbConnection connection)
         {
             const string Sql =
 @"INSERT INTO [Test]
@@ -228,12 +213,7 @@ VALUES
     @SetTestType,
     @SetNullTestType
 );";
-            Reflector<TestClass> repo = new Reflector<TestClass>();
-
-            using (IDbCommand command = repo.CreateCommand(Sql, instance, connection))
-            {
-                command.ExecuteNonQuery();
-            }
+            return connection.Execute(Sql, instance, null);
         }
 
         private void AssertGetTestInstanceFromDatabase(TestClass instance, IDbConnection connection)
@@ -244,28 +224,8 @@ FROM [Test]
 WHERE 
     [SetGuid] = @SetGuid";
 
-            Reflector<TestClass> repo = new Reflector<TestClass>();
-            TestClass fetch = null;
-
-            using (IDbCommand command = connection.CreateCommand())
-            {
-                command.CommandType = CommandType.Text;
-                command.CommandText = Sql;
-
-                IDbDataParameter p = command.CreateParameter();
-                p.ParameterName = "@SetGuid";
-                p.Value = instance.SetGuid;
-                command.Parameters.Add(p);
-
-                using (IDataReader reader = command.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        fetch = repo.ToModel(reader);
-                    }
-                }
-            }
-
+            
+            TestClass fetch = connection.Query<TestClass>(Sql, instance, null).FirstOrDefault();
             Assert.IsNotNull(fetch);
             Assert.AreEqual(instance.SetBool, fetch.SetBool);
             Assert.AreEqual(instance.SetChar, fetch.SetChar);

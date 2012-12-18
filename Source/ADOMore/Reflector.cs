@@ -12,21 +12,16 @@
     /// Contains ADO helper methods for converting to and from model objects
     /// </summary>
     /// <typeparam name="T">The type of the model object</typeparam>
-    public class Reflector<T>
+    internal sealed class Reflector
     {
-        private List<PropertyInfo> typeProperties;
-        private Type myType = typeof(T);
+        private PropertyInfo[] typeProperties;
+        private Type myType;
         private readonly object typeLocker = new object();
 
-        /// <summary>
-        /// Gets the collection of properties associated with type <typeparamref name="T"/>
-        protected IEnumerable<PropertyInfo> TypeProperties
+        internal Reflector(Type objectType)
         {
-            get
-            {
-                this.EnsureTypeProperties();
-                return this.typeProperties.AsReadOnly();
-            }
+            this.myType = objectType;
+            this.EnsureTypeProperties();
         }
 
         /// <summary>
@@ -34,7 +29,7 @@
         /// </summary>
         /// <param name="datareader">The datareader</param>
         /// <returns>The collection</returns>
-        public IEnumerable<T> ToCollection(IDataReader datareader)
+        internal IEnumerable<T> ToCollection<T>(IDataReader datareader)
         {
             if (datareader == null)
             {
@@ -43,24 +38,8 @@
 
             while (datareader.Read())
             {
-                yield return this.ToModel((IDataRecord)datareader);
+                yield return this.ToObject<T>((IDataRecord)datareader);
             }
-        }
-
-        /// <summary>
-        /// Converts the provided record to an instance of <typeparamref name="T"/>
-        /// </summary>
-        /// <param name="dataReader">An <see cref="IDataReader"/></param>
-        /// <param name="readFirst">If true then the reader will be read first</param>
-        /// <returns>An instance of <typeparamref name="T"/></returns>
-        public T ToModel(IDataReader datareader, bool readFirst)
-        {
-            if (readFirst)
-            {
-                datareader.Read();
-            }
-
-            return this.ToModel((IDataRecord)datareader);
         }
 
         /// <summary>
@@ -68,14 +47,14 @@
         /// </summary>
         /// <param name="dataRecord">An <see cref="IDataRecord"/></param>
         /// <returns>An instance of <typeparamref name="T"/></returns>
-        public T ToModel(IDataRecord dataRecord)
+        public T ToObject<T>(IDataRecord dataRecord)
         {
             T model;
+            
             Dictionary<string, int> fieldDictionary;
             IEnumerable<PropertyInfo> settable;
-
             model = Activator.CreateInstance<T>();
-            settable = this.TypeProperties.Where(p => p.CanWrite).ToArray();
+            settable = this.typeProperties.Where(p => p.CanWrite).ToArray();
             fieldDictionary = new Dictionary<string, int>();
 
             for (int i = 0, c = dataRecord.FieldCount; i < c; i++)
@@ -119,35 +98,10 @@
         /// <param name="sql">The SQL command</param>
         /// <param name="model">The POCO object</param>
         /// <param name="connection">The data connection</param>
-        /// <returns>A data command</returns>
-        public IDbCommand CreateCommand(string sql, T model, IDbConnection connection)
-        {
-            return this.CreateCommand(sql, model, connection, CommandType.Text);
-        }
-
-        /// <summary>
-        /// Creates a data command from a text command, a POCO object and a data connection
-        /// </summary>
-        /// <param name="sql">The SQL command</param>
-        /// <param name="model">The POCO object</param>
-        /// <param name="connection">The data connection</param>
-        /// <param name="commandType">A command type</param>
-        /// <returns>A data command</returns>
-        public IDbCommand CreateCommand(string sql, T model, IDbConnection connection, CommandType commandType)
-        {
-            return this.CreateCommand(sql, model, connection, commandType, null);
-        }
-
-        /// <summary>
-        /// Creates a data command from a text command, a POCO object and a data connection
-        /// </summary>
-        /// <param name="sql">The SQL command</param>
-        /// <param name="model">The POCO object</param>
-        /// <param name="connection">The data connection</param>
         /// <param name="commandType">A command type</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>A data command</returns>
-        public IDbCommand CreateCommand(string sql, T model, IDbConnection connection, CommandType commandType, IDbTransaction transaction)
+        internal IDbCommand CreateCommand(string sql, object model, IDbConnection connection, CommandType commandType, IDbTransaction transaction)
         {
             IDbCommand command = null;
 
@@ -175,7 +129,7 @@
                 command.Transaction = transaction;
             }
 
-            foreach (PropertyInfo property in this.TypeProperties)
+            foreach (PropertyInfo property in this.typeProperties)
             {
                 Type propertyType = property.PropertyType.UnderlyingType();
 
@@ -204,14 +158,13 @@
 
         private void EnsureTypeProperties()
         {
-            if (this.typeProperties == null)
+            lock (this.typeLocker)
             {
-                lock (this.typeLocker)
+                if (this.typeProperties == null)
                 {
                     if (this.typeProperties == null)
                     {
-                        this.typeProperties = new List<PropertyInfo>();
-                        this.typeProperties.AddRange(myType.GetProperties());
+                        this.typeProperties = myType.GetProperties().ToArray();
                     }
                 }
             }

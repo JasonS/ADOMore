@@ -9,41 +9,21 @@
 
     public static class DataExtensions
     {
-        /// <summary>
-        /// Creates and instance of type T from the provided data reader
-        /// </summary>
-        /// <typeparam name="T">The type of the model to create</typeparam>
-        /// <param name="reader">The data reader</param>
-        /// <param name="readFirst">Should the reader be read before reflecting?</param>
-        /// <returns>The model</returns>
-        public static T ToModel<T>(this IDataReader reader, bool readFirst)
-        {
-            Reflector<T> reflector = new Reflector<T>();
-            return reflector.ToModel(reader, readFirst);
-        }
+        public static readonly object dictionaryLock = new object();
+        private static readonly Dictionary<string, Reflector> typeCache = new Dictionary<string, Reflector>();
 
         /// <summary>
-        /// Creates and instance of type T from the provided data record
+        /// Creates a sql command from parameterized sql text and a model of type T
         /// </summary>
-        /// <typeparam name="T">The type of the model to create</typeparam>
-        /// <param name="dataRecord">The data record</param>
-        /// <returns>The model</returns>
-        public static T ToModel<T>(this IDataRecord dataRecord)
+        /// <typeparam name="T">The type of the model</typeparam>
+        /// <param name="connection">This db connection</param>
+        /// <param name="sql">A sql string</param>
+        /// <param name="model">The model to inject values from</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>The command</returns>
+        public static IDbCommand CreateCommand(this IDbConnection connection, string sql, object model, IDbTransaction transaction)
         {
-            Reflector<T> reflector = new Reflector<T>();
-            return reflector.ToModel(dataRecord);
-        }
-
-        /// <summary>
-        /// Create a collection of models from the data reader
-        /// </summary>
-        /// <typeparam name="T">The type of the models in the collection</typeparam>
-        /// <param name="reader">A data reader</param>
-        /// <returns>The collection</returns>
-        public static IEnumerable<T> ToModelCollection<T>(this IDataReader reader)
-        {
-            Reflector<T> reflector = new Reflector<T>();
-            return reflector.ToCollection(reader);
+            return new Reflector(model.GetType()).CreateCommand(sql, model, connection, CommandType.Text, transaction);
         }
 
         /// <summary>
@@ -55,71 +35,73 @@
         /// <param name="model">The model to inject values from</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>The command</returns>
-        public static IDbCommand CreateCommandFromModel<T>(this IDbConnection connection, string sql, T model, IDbTransaction transaction)
+        public static IDbCommand CreateCommand<T>(this IDbConnection connection, string sql, T model, IDbTransaction transaction)
         {
-            Reflector<T> reflector = new Reflector<T>();
-            return reflector.CreateCommand(sql, model, connection, CommandType.Text, transaction);
+            return CheckReflectorCache(typeof(T)).CreateCommand(sql, model, connection, CommandType.Text, transaction);
         }
 
         /// <summary>
-        /// Creates a sql command from a collection of key value pairs
+        /// Executes a query agains a database
         /// </summary>
-        /// <param name="connection">This db connection</param>
-        /// <param name="keyValues">A collection of key value pairs</param>
-        /// <param name="sql">A paraterized sql string</param>
+        /// <param name="connection">This sql connection</param>
+        /// <param name="sql">The sql string to execute</param>
+        /// <param name="parameters">An object representing query parameters</param>
         /// <param name="transaction">An optional transaction</param>
-        /// <returns></returns>
-        public static IDbCommand CreateCommand(this IDbConnection connection, IDictionary<string, object> keyValues, string sql, IDbTransaction transaction)
+        /// <returns>The number of affected rows</returns>
+        public static int Execute(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
-            IDbCommand command = null;
-
-            if (connection == null)
+            using (IDbCommand command = new Reflector(parameters.GetType()).CreateCommand(sql, parameters, connection, CommandType.Text, transaction))
             {
-                throw new ArgumentNullException("connection", "connection cannot be null");
-            }
-
-            if (string.IsNullOrEmpty(sql))
-            {
-                throw new ArgumentNullException("sql", "sql cannot be null or empty");
-            }
-
-            command = connection.CreateCommand();
-            command.CommandText = sql;
-            command.CommandType = CommandType.Text;
-
-            if (transaction != null)
-            {
-                command.Transaction = transaction;
-            }
-
-            if (keyValues != null)
-            {
-                foreach (var key in keyValues.Keys)
+                using (IDataReader reader = command.ExecuteReader())
                 {
-                    if (string.IsNullOrWhiteSpace(key))
-                    {
-                        throw new InvalidOperationException("all keys must have a non-empty value to be added to command parameters");
-                    }
+                    return reader.RecordsAffected;
+                }
+            }
+        }
 
-                    object value = keyValues[key];
+        /// <summary>
+        /// Queries the database with the provided sql connection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="connection"></param>
+        /// <param name="sql"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, T parameters, IDbTransaction transaction)
+        {
+            Reflector reflector = CheckReflectorCache(typeof(T));
 
-                    if (value == null)
-                    {
-                        value = DBNull.Value;
-                    }
-                    else if (value.GetType() == typeof(char))
-                    {
-                        value = ((char)value).ToString(CultureInfo.InvariantCulture);
-                    }
+            using (IDbCommand command = reflector.CreateCommand(sql, parameters, connection, CommandType.Text, transaction))
+            {
+                using (IDataReader reader = command.ExecuteReader())
+                {
+                    return reflector.ToCollection<T>(reader);
+                }
+            }
+        }
 
-                    IDbDataParameter parameter = command.CreateParameter();
-                    parameter.ParameterName = key.StartsWith("@") ? key : string.Concat("@", key);
-                    parameter.Value = value;
-                    command.Parameters.Add(parameter);
+        /// <summary>
+        /// Creates and instance of type T from the provided data record
+        /// </summary>
+        /// <typeparam name="T">The type of the model to create</typeparam>
+        /// <param name="dataRecord">The data record</param>
+        /// <returns>The model</returns>
+        public static T ToObject<T>(this IDataRecord dataRecord)
+        {
+            return CheckReflectorCache(typeof(T)).ToObject<T>(dataRecord);
+        }
+
+        private static Reflector CheckReflectorCache(Type type)
+        {
+            lock (dictionaryLock)
+            {
+                if (!typeCache.ContainsKey(type.Name))
+                {
+                    typeCache.Add(type.Name, new Reflector(type));
                 }
             }
 
-            return command;
+            return typeCache[type.Name];
         }
     }
 }
