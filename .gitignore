@@ -2,6 +2,14 @@
 [Bb]in/
 [Oo]bj/
 
+# Mac Hidden files
+
+*.DS_Store
+
+# Mono filed
+
+*.userprefs
+
 # mstest test results
 TestResults
 test-results

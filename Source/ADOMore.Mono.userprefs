@@ -5,6 +5,7 @@
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="ADOMore.Mono" expanded="True">
+            <Node name="Properties" expanded="True" />
             <Node name="Reflector.cs" selected="True" />
           </Node>
           <Node name="ADOMore.Test.Mono" expanded="True" />
@@ -20,7 +21,7 @@
         <State selected="True" />
       </Pad>
       <Pad Id="MonoDevelop.NUnit.TestPad">
-        <State />
+        <State selected="True" />
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
