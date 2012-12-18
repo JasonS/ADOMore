@@ -2,47 +2,56 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.Specialized;
     using System.Data;
     using System.Globalization;
     using System.Linq;
     using System.Text;
 
+    /// <summary>
+    /// Provides extensions for parameterizing <see cref="IDbCommands"/> and
+    /// materializing objects from query results.
+    /// </summary>
     public static class DataExtensions
     {
-        public static readonly object dictionaryLock = new object();
-        private static readonly Dictionary<string, Reflector> typeCache = new Dictionary<string, Reflector>();
+        private static readonly HybridDictionary ReflectorCacheInstance = new HybridDictionary();
+
+        internal static HybridDictionary ReflectorCache
+        {
+            get { return ReflectorCacheInstance; }
+        }
 
         /// <summary>
-        /// Creates a sql command from parameterized sql text and a model of type T
+        /// Creates a parameterized <see cref="IDbCommand"/>.
         /// </summary>
-        /// <param name="connection">This db connection</param>
-        /// <param name="sql">A sql string</param>
-        /// <returns>The command</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to create the command for.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <returns>The created <see cref="IDbCommand"/>.</returns>
         public static IDbCommand CreateCommand(this IDbConnection connection, string sql)
         {
             return connection.CreateCommand(sql, null, null);
         }
 
         /// <summary>
-        /// Creates a sql command from parameterized sql text and a model of type T
+        /// Creates a parameterized <see cref="IDbCommand"/>.
         /// </summary>
-        /// <param name="connection">This db connection</param>
-        /// <param name="sql">A sql string</param>
-        /// <param name="parameters">An object to use when paraterizing a sql query</param>
-        /// <returns>The command</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to create the command for.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <returns>The created <see cref="IDbCommand"/>.</returns>
         public static IDbCommand CreateCommand(this IDbConnection connection, string sql, object parameters)
         {
             return connection.CreateCommand(sql, parameters, null);
         }
 
         /// <summary>
-        /// Creates a sql command from parameterized sql text and a model of type T
+        /// Creates a parameterized <see cref="IDbCommand"/>.
         /// </summary>
-        /// <param name="connection">This db connection</param>
-        /// <param name="sql">A sql string</param>
-        /// <param name="parameters">An object to use when paraterizing a sql query</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>The command</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to create the command for.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
+        /// <returns>The created <see cref="IDbCommand"/>.</returns>
         public static IDbCommand CreateCommand(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
             IDbCommand result = null;
@@ -51,7 +60,7 @@
             {
                 if (parameters != null)
                 {
-                    result = CheckReflectorCache(parameters.GetType()).CreateCommand(sql, parameters, connection, CommandType.Text, transaction);
+                    result = GetReflector(parameters.GetType()).CreateCommand(sql, parameters, connection, CommandType.Text, transaction);
                 }
                 else
                 {
@@ -80,36 +89,36 @@
         }
 
         /// <summary>
-        /// Executes a query agains a database
+        /// Executes a SQL command.
         /// </summary>
-        /// <param name="connection">This sql connection</param>
-        /// <param name="sql">The sql string to execute</param>
-        /// <returns>The number of affected rows</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <returns>The number of affected rows.</returns>
         public static int Execute(this IDbConnection connection, string sql)
         {
             return connection.Execute(sql, null, null);
         }
 
         /// <summary>
-        /// Executes a query agains a database
+        /// Executes a SQL command.
         /// </summary>
-        /// <param name="connection">This sql connection</param>
-        /// <param name="sql">The sql string to execute</param>
-        /// <param name="parameters">An object representing query parameters</param>
-        /// <returns>The number of affected rows</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <returns>The number of affected rows.</returns>
         public static int Execute(this IDbConnection connection, string sql, object parameters)
         {
             return connection.Execute(sql, parameters, null);
         }
 
         /// <summary>
-        /// Executes a query agains a database
+        /// Executes a SQL command.
         /// </summary>
-        /// <param name="connection">This sql connection</param>
-        /// <param name="sql">The sql string to execute</param>
-        /// <param name="parameters">An object representing query parameters</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>The number of affected rows</returns>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
+        /// <returns>The number of affected rows.</returns>
         public static int Execute(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
             using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
@@ -119,37 +128,39 @@
         }
 
         /// <summary>
-        /// Queries the database with the provided sql connection
+        /// Executes a SQL query.
         /// </summary>
-        /// <typeparam name="T">The type of model to return from the query</typeparam>
-        /// <param name="connection">A sql connection</param>
-        /// <param name="sql">The sql to query with</param>
-        /// <returns>A collection of model objects</returns>
+        /// <typeparam name="T">The type of objects to return from the query.</typeparam>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <returns>A collection representing the results of the query.</returns>
         public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql)
         {
             return connection.Query<T>(sql, null, null);
         }
 
         /// <summary>
-        /// Queries the database with the provided sql connection
+        /// Executes a SQL query.
         /// </summary>
-        /// <typeparam name="T">The type of model to return from the query</typeparam>
-        /// <param name="connection">A sql connection</param>
-        /// <param name="sql">The sql to query with</param>
-        /// <returns>A collection of model objects</returns>
+        /// <typeparam name="T">The type of objects to return from the query.</typeparam>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <returns>A collection representing the results of the query.</returns>
         public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters)
         {
             return connection.Query<T>(sql, parameters, null);
         }
 
         /// <summary>
-        /// Queries the database with the provided sql connection
+        /// Executes a SQL query.
         /// </summary>
-        /// <typeparam name="T">The type of model to return from the query</typeparam>
-        /// <param name="connection">A sql connection</param>
-        /// <param name="sql">The sql to query with</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>A collection of model objects</returns>
+        /// <typeparam name="T">The type of objects to return from the query.</typeparam>
+        /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
+        /// <param name="sql">A SQL string.</param>
+        /// <param name="parameters">An object providing parameters to the command.</param>
+        /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
+        /// <returns>A collection representing the results of the query.</returns>
         public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
             using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
@@ -158,34 +169,38 @@
                 {
                     while (reader.Read())
                     {
-                        yield return CheckReflectorCache(typeof(T)).ToObject<T>(reader);
+                        yield return GetReflector(typeof(T)).ToObject<T>(reader);
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Creates and instance of type T from the provided data record
+        /// Creates an object instance from the provided <see cref="IDataRecord"/>.
         /// </summary>
-        /// <typeparam name="T">The type of the model to create</typeparam>
-        /// <param name="dataRecord">The data record</param>
-        /// <returns>The model</returns>
+        /// <typeparam name="T">The type of the object to create.</typeparam>
+        /// <param name="dataRecord">The data record to create the object from.</param>
+        /// <returns>The created object.</returns>
         public static T ToObject<T>(this IDataRecord dataRecord)
         {
-            return CheckReflectorCache(typeof(T)).ToObject<T>(dataRecord);
+            return GetReflector(typeof(T)).ToObject<T>(dataRecord);
         }
 
-        private static Reflector CheckReflectorCache(Type type)
+        internal static Reflector GetReflector(Type type)
         {
-            lock (dictionaryLock)
+            Reflector result = ReflectorCacheInstance[type] as Reflector;
+
+            if (result == null)
             {
-                if (!typeCache.ContainsKey(type.Name))
+                result = new Reflector(type);
+
+                lock (ReflectorCacheInstance.SyncRoot)
                 {
-                    typeCache.Add(type.Name, new Reflector(type));
+                    ReflectorCacheInstance[type] = result;
                 }
             }
 
-            return typeCache[type.Name];
+            return result;
         }
     }
 }
