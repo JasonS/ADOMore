@@ -42,6 +42,8 @@
     <Compile Include="ReflectionExtensions.cs" />
     <Compile Include="Reflector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="IValueProvider.cs" />
+    <Compile Include="ValueProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

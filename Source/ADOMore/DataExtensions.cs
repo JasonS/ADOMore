@@ -15,6 +15,7 @@
     public static class DataExtensions
     {
         private static readonly HybridDictionary ReflectorCacheInstance = new HybridDictionary();
+        private static readonly IValueProvider[] ValueProviders = new[] { new ValueProvider() };
 
         internal static HybridDictionary ReflectorCache
         {
@@ -192,7 +193,7 @@
 
             if (result == null)
             {
-                result = new Reflector(type);
+                result = new Reflector(type, DataExtensions.ValueProviders);
 
                 lock (ReflectorCacheInstance.SyncRoot)
                 {

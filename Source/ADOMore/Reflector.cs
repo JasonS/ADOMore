@@ -9,55 +9,77 @@
 
     internal sealed class Reflector
     {
+        private IEnumerable<IValueProvider> valueProviders;
         private IDictionary<PropertyInfo, Type> typeProperties;
-        
-        internal Reflector(Type type)
+        private IValueProvider valueTypeProvider;
+        private bool isValueType;
+
+        internal Reflector(Type type, IEnumerable<IValueProvider> valueProviders)
         {
             if (type == null)
             {
                 throw new ArgumentNullException("type", "type cannot be null.");
             }
 
-            this.typeProperties = GetProperties(type);
+            if (valueProviders == null)
+            {
+                throw new ArgumentNullException("valueProviders", "valueProviders cannot be null.");
+            }
+
+            this.valueProviders = valueProviders;
+            this.valueTypeProvider = valueProviders.FirstOrDefault(p => p.CanProvideValue(type.UnderlyingType()));
+
+            if (this.valueTypeProvider != null)
+            {
+                this.isValueType = true;
+            }
+            else
+            {
+                this.typeProperties = GetProperties(type);
+            }
         }
 
         public T ToObject<T>(IDataRecord dataRecord)
         {
             T model;
-            
-            Dictionary<string, int> fieldDictionary;
-            IEnumerable<PropertyInfo> settable;
-            model = Activator.CreateInstance<T>();
-            settable = this.typeProperties.Keys.Where(p => p.CanWrite).ToArray();
-            fieldDictionary = new Dictionary<string, int>();
 
-            for (int i = 0, c = dataRecord.FieldCount; i < c; i++)
+            if (this.isValueType)
             {
-                fieldDictionary.Add(dataRecord.GetName(i).ToUpperInvariant(), i);
-            }
-
-            foreach (PropertyInfo property in settable)
-            {
-                Type propertyType = this.typeProperties[property];
-
-                if (propertyType.IsDatabaseCompatible())
+                if (dataRecord.FieldCount > 0)
                 {
-                    string upperName = property.Name.ToUpperInvariant();
+                    model = (T)this.valueTypeProvider.ReadValue(typeof(T).UnderlyingType(), dataRecord.GetValue(0));
+                }
+                else
+                {
+                    model = default(T);
+                }
+            }
+            else
+            {
+                Dictionary<string, int> fieldDictionary;
+                IEnumerable<PropertyInfo> settable;
+                model = Activator.CreateInstance<T>();
+                settable = this.typeProperties.Keys.Where(p => p.CanWrite).ToArray();
+                fieldDictionary = new Dictionary<string, int>();
 
-                    if (fieldDictionary.ContainsKey(upperName))
+                for (int i = 0, c = dataRecord.FieldCount; i < c; i++)
+                {
+                    fieldDictionary.Add(dataRecord.GetName(i).ToUpperInvariant(), i);
+                }
+
+                foreach (PropertyInfo property in settable)
+                {
+                    Type propertyType = this.typeProperties[property];
+                    IValueProvider provider = this.valueProviders.FirstOrDefault(p => p.CanProvideValue(propertyType));
+
+                    if (provider != null)
                     {
-                        object fieldValue = dataRecord.GetValue(fieldDictionary[upperName]);
+                        string upperName = property.Name.ToUpperInvariant();
 
-                        if (fieldValue != null && fieldValue != DBNull.Value)
+                        if (fieldDictionary.ContainsKey(upperName))
                         {
-                            if (propertyType.IsEnum)
-                            {
-                                property.SetValue(model, Enum.ToObject(propertyType, fieldValue), null);
-                            }
-                            else
-                            {
-                                property.SetValue(model, Convert.ChangeType(fieldValue, propertyType), null);
-                            }
+                            object fieldValue = dataRecord.GetValue(fieldDictionary[upperName]);
+                            property.SetValue(model, provider.ReadValue(propertyType, fieldValue), null);
                         }
                     }
                 }
@@ -97,23 +119,13 @@
             foreach (PropertyInfo property in this.typeProperties.Keys)
             {
                 Type propertyType = this.typeProperties[property];
+                IValueProvider provider = this.valueProviders.FirstOrDefault(p => p.CanProvideValue(propertyType));
 
-                if (propertyType.IsDatabaseCompatible())
+                if (provider != null)
                 {
-                    object value = property.GetValue(model, null);
-                    
-                    if (value == null)
-                    {
-                        value = DBNull.Value;
-                    }
-                    else if (value.GetType() == typeof(char))
-                    {
-                        value = ((char)value).ToString(CultureInfo.InvariantCulture);
-                    }
-                    
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = string.Concat("@", property.Name);
-                    parameter.Value = value;
+                    parameter.Value = provider.WriteValue(propertyType, property.GetValue(model, null));
                     command.Parameters.Add(parameter);
                 }
             }

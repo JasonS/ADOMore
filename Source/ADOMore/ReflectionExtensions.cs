@@ -8,14 +8,6 @@
 
     internal static class ReflectionExtensions
     {
-        internal static bool IsDatabaseCompatible(this Type propertyType)
-        {
-            return (propertyType.IsPrimitive 
-                    && typeof(IConvertible).IsAssignableFrom(propertyType)) 
-                    || propertyType.IsValueType 
-                    || propertyType == typeof(string);
-        }
-
         internal static Type UnderlyingType(this Type propertyType)
         {
             if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
