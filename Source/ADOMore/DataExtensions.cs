@@ -194,11 +194,7 @@
             if (result == null)
             {
                 result = new Reflector(type, DataExtensions.ValueProviders);
-
-                lock (ReflectorCacheInstance.SyncRoot)
-                {
-                    ReflectorCacheInstance[type] = result;
-                }
+                ReflectorCacheInstance[type] = result;
             }
 
             return result;
