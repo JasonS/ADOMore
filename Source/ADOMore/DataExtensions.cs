@@ -175,6 +175,29 @@
                 }
             }
         }
+        
+        /// <summary>
+        /// Reads a strongly-typed collection from the given <see cref="IDataReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="IDataReader"/> to read from.</param>
+        /// <typeparam name="T">The type of objects to read.</typeparam>
+        public static IEnumerable<T> Read<T>(this IDataReader reader)
+        {
+            if (reader == null)
+            {
+                throw new ArgumentNullException("reader", "reader cannot be null.");
+            }
+            
+            List<T> results = new List<T>();
+            Reflector reflector = GetReflector(typeof(T));
+            
+            while (reader.Read())
+            {
+                results.Add(reflector.ToObject<T>(reader));
+            }
+            
+            return results;
+        }
 
         /// <summary>
         /// Creates an object instance from the provided <see cref="IDataRecord"/>.
