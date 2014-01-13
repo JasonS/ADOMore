@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using System.Reflection;
@@ -88,6 +89,7 @@
             return model;
         }
 
+        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Reviewed.")]
         internal IDbCommand CreateCommand(string sql, object model, IDbConnection connection, CommandType commandType, IDbTransaction transaction)
         {
             IDbCommand command = null;

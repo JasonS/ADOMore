@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Data;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using System.Text;
@@ -53,6 +54,7 @@
         /// <param name="parameters">An object providing parameters to the command.</param>
         /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
         /// <returns>The created <see cref="IDbCommand"/>.</returns>
+        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Reviewed.")]
         public static IDbCommand CreateCommand(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
             IDbCommand result = null;
