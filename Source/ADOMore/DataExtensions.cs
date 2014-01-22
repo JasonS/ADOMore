@@ -1,6 +1,7 @@
 ﻿namespace ADOMore
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Data;
@@ -124,9 +125,20 @@
         /// <returns>The number of affected rows.</returns>
         public static int Execute(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
-            using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
+            if (parameters.IsCollection())
             {
-                return command.ExecuteNonQuery();
+                int result = 0;
+
+                foreach (object p in (IEnumerable)parameters)
+                {
+                    result += connection.ExecuteImpl(sql, p, transaction);
+                }
+
+                return result;
+            }
+            else
+            {
+                return connection.ExecuteImpl(sql, parameters, transaction);
             }
         }
 
@@ -166,18 +178,23 @@
         /// <returns>A collection representing the results of the query.</returns>
         public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
         {
-            using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
+            if (parameters.IsCollection())
             {
-                using (IDataReader reader = command.ExecuteReader())
+                List<T> result = new List<T>();
+
+                foreach (object p in (IEnumerable)parameters)
                 {
-                    while (reader.Read())
-                    {
-                        yield return GetReflector(typeof(T)).ToObject<T>(reader);
-                    }
+                    result.AddRange(connection.QueryImpl<T>(sql, p, transaction));
                 }
+
+                return result;
+            }
+            else
+            {
+                return connection.QueryImpl<T>(sql, parameters, transaction);
             }
         }
-        
+
         /// <summary>
         /// Reads a strongly-typed collection from the given <see cref="IDataReader"/>.
         /// </summary>
@@ -212,6 +229,14 @@
             return GetReflector(typeof(T)).ToObject<T>(dataRecord);
         }
 
+        internal static int ExecuteImpl(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
+        {
+            using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
+            {
+                return command.ExecuteNonQuery();
+            }
+        }
+
         internal static Reflector GetReflector(Type type)
         {
             Reflector result = ReflectorCacheInstance[type] as Reflector;
@@ -223,6 +248,37 @@
             }
 
             return result;
+        }
+
+        internal static bool IsCollection(this object value)
+        {
+            if (value != null)
+            {
+                Type type = value.GetType();
+
+                if (type.IsArray
+                    || (typeof(IEnumerable).IsAssignableFrom(type)
+                    && Type.GetTypeCode(type) != TypeCode.String))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal static IEnumerable<T> QueryImpl<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
+        {
+            using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
+            {
+                using (IDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        yield return GetReflector(typeof(T)).ToObject<T>(reader);
+                    }
+                }
+            }
         }
     }
 }
