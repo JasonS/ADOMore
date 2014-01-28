@@ -97,33 +97,10 @@
         /// </summary>
         /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
         /// <param name="sql">A SQL string.</param>
-        /// <returns>The number of affected rows.</returns>
-        public static int Execute(this IDbConnection connection, string sql)
-        {
-            return connection.Execute(sql, null, null);
-        }
-
-        /// <summary>
-        /// Executes a SQL command.
-        /// </summary>
-        /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
-        /// <param name="sql">A SQL string.</param>
-        /// <param name="parameters">An object providing parameters to the command.</param>
-        /// <returns>The number of affected rows.</returns>
-        public static int Execute(this IDbConnection connection, string sql, object parameters)
-        {
-            return connection.Execute(sql, parameters, null);
-        }
-
-        /// <summary>
-        /// Executes a SQL command.
-        /// </summary>
-        /// <param name="connection">The <see cref="IDbConnection"/> to execute the command with.</param>
-        /// <param name="sql">A SQL string.</param>
         /// <param name="parameters">An object providing parameters to the command.</param>
         /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
         /// <returns>The number of affected rows.</returns>
-        public static int Execute(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
+        public static int Execute(this IDbConnection connection, string sql, object parameters = null, IDbTransaction transaction = null)
         {
             if (parameters.IsCollection())
             {
@@ -148,35 +125,11 @@
         /// <typeparam name="T">The type of objects to return from the query.</typeparam>
         /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
         /// <param name="sql">A SQL string.</param>
-        /// <returns>A collection representing the results of the query.</returns>
-        public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql)
-        {
-            return connection.Query<T>(sql, null, null);
-        }
-
-        /// <summary>
-        /// Executes a SQL query.
-        /// </summary>
-        /// <typeparam name="T">The type of objects to return from the query.</typeparam>
-        /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
-        /// <param name="sql">A SQL string.</param>
-        /// <param name="parameters">An object providing parameters to the command.</param>
-        /// <returns>A collection representing the results of the query.</returns>
-        public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters)
-        {
-            return connection.Query<T>(sql, parameters, null);
-        }
-
-        /// <summary>
-        /// Executes a SQL query.
-        /// </summary>
-        /// <typeparam name="T">The type of objects to return from the query.</typeparam>
-        /// <param name="connection">The <see cref="IDbConnection"/> to execute the query with.</param>
-        /// <param name="sql">A SQL string.</param>
         /// <param name="parameters">An object providing parameters to the command.</param>
         /// <param name="transaction">The <see cref="IDbTransaction"/> to use.</param>
+        /// <param name="iterator">A function invoked for each row returned from the query.</param>
         /// <returns>A collection representing the results of the query.</returns>
-        public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
+        public static IEnumerable<T> Query<T>(this IDbConnection connection, string sql, object parameters = null, IDbTransaction transaction = null, Action<object, T> iterator = null)
         {
             if (parameters.IsCollection())
             {
@@ -184,14 +137,14 @@
 
                 foreach (object p in (IEnumerable)parameters)
                 {
-                    result.AddRange(connection.QueryImpl<T>(sql, p, transaction));
+                    result.AddRange(connection.QueryImpl<T>(sql, p, transaction, iterator));
                 }
 
                 return result;
             }
             else
             {
-                return connection.QueryImpl<T>(sql, parameters, transaction);
+                return connection.QueryImpl<T>(sql, parameters, transaction, iterator);
             }
         }
 
@@ -267,7 +220,7 @@
             return false;
         }
 
-        internal static IEnumerable<T> QueryImpl<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction)
+        internal static IEnumerable<T> QueryImpl<T>(this IDbConnection connection, string sql, object parameters, IDbTransaction transaction, Action<object, T> iterator)
         {
             using (IDbCommand command = connection.CreateCommand(sql, parameters, transaction))
             {
@@ -275,7 +228,14 @@
                 {
                     while (reader.Read())
                     {
-                        yield return GetReflector(typeof(T)).ToObject<T>(reader);
+                        T result = GetReflector(typeof(T)).ToObject<T>(reader);
+
+                        if (iterator != null)
+                        {
+                            iterator(parameters, result);
+                        }
+
+                        yield return result;
                     }
                 }
             }
