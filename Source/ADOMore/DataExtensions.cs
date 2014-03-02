@@ -16,6 +16,7 @@
     /// </summary>
     public static class DataExtensions
     {
+        private static readonly object SyncRoot = new object();
         private static readonly HybridDictionary ReflectorCacheInstance = new HybridDictionary();
         private static readonly IValueProvider[] ValueProviders = new[] { new ValueProvider() };
 
@@ -192,15 +193,18 @@
 
         internal static Reflector GetReflector(Type type)
         {
-            Reflector result = ReflectorCacheInstance[type] as Reflector;
-
-            if (result == null)
+            lock (DataExtensions.ReflectorCacheInstance)
             {
-                result = new Reflector(type, DataExtensions.ValueProviders);
-                ReflectorCacheInstance[type] = result;
+                Reflector result = ReflectorCacheInstance[type] as Reflector;
+    
+                if (result == null)
+                {
+                    result = new Reflector(type, DataExtensions.ValueProviders);
+                    ReflectorCacheInstance[type] = result;
+                }
+    
+                return result;
             }
-
-            return result;
         }
 
         internal static bool IsCollection(this object value)
