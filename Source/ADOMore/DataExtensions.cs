@@ -193,7 +193,7 @@
 
         internal static Reflector GetReflector(Type type)
         {
-            lock (DataExtensions.ReflectorCacheInstance)
+            lock (DataExtensions.SyncRoot)
             {
                 Reflector result = ReflectorCacheInstance[type] as Reflector;
     
